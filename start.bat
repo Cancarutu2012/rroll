@@ -1,0 +1,2 @@
+start tinyurl.com/thisisaverigooddomain
+start tinyurl.com/thisisaverigooddomain
