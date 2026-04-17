@@ -162,3 +162,6 @@ $window.Dispatcher.Invoke([action]{ $window.Close() })
 [CursorUtil]::ShowCursor($true)
 
 
+exit
+
+
