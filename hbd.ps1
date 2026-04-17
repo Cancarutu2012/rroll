@@ -1,5 +1,5 @@
 
-cd $env:USERPROFILE%
+cd $env:USERPROFILE
 Invoke-WebRequest -Uri "https://github.com/Cancarutu2012/rroll/raw/refs/heads/main/hbd.zip" -OutFile "$env:USERPROFILE\hbd.zip"
 cd $env:USERPROFILE
 
