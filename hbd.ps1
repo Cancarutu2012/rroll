@@ -55,5 +55,6 @@ catch {
 }
 
 Read-Host "FINISH"
+exit
 
 
