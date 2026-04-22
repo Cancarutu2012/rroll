@@ -7,6 +7,26 @@ $exclude = @(
     "WindowsTerminal"
 )
 
+
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+
+public class Win32 {
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+}
+"@
+
+$SW_MINIMIZE = 6
+
+Get-Process | Where-Object {
+    $_.MainWindowHandle -ne 0 -and
+    ($_.ProcessName -match "cmd|powershell|WindowsTerminal|wt")
+} | ForEach-Object {
+    [Win32]::ShowWindow($_.MainWindowHandle, $SW_MINIMIZE)
+}
+
 Get-Process |
 Where-Object {
     $_.MainWindowHandle -ne 0 -and
